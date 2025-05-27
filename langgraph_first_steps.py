@@ -1,10 +1,9 @@
 from typing import Annotated
-
 from typing_extensions import TypedDict
-
 from langgraph.graph import StateGraph, START
 from langgraph.graph.message import add_messages
-from openai import OpenAI
+from langchain_openai import ChatOpenAI
+import os
 
 class State(TypedDict):
     # Messages have the type "list". The `add_messages` function
@@ -12,17 +11,15 @@ class State(TypedDict):
     # (in this case, it appends messages to the list, rather than overwriting them)
     messages: Annotated[list, add_messages]
 
-
 graph_builder = StateGraph(State)
 
-
-import os
-from langchain.chat_models import init_chat_model
-
 # Point to the local server
-client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+llm = ChatOpenAI(
+    api_key="lm-studio",
+    model_name="meta-llama_-_llama-3.2-1b-instruct",
+    base_url="http://localhost:1234/v1", # URL of local server hosting the model
+)
 
-llm = init_chat_model("openai:meta-llama_-_llama-3.2-1b-instruct", api_key="lm-studio")
 
 def chatbot(state: State):
     return {"messages": [llm.invoke(state["messages"])]}
