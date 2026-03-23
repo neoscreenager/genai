@@ -1,24 +1,92 @@
-#import os
+import os
 from huggingface_hub import InferenceClient
 
-HF_TOKEN = '' #remove before committing, add token to environment varialbe and read it from there
+## You need a token from https://hf.co/settings/tokens, ensure that you select 'read' as the token type. If you run this on Google Colab, you can set it up in the "settings" tab under "secrets". Make sure to call it "HF_TOKEN"
+# HF_TOKEN = os.environ.get("HF_TOKEN")
+
+#client = InferenceClient(model="meta-llama/Llama-4-Scout-17B-16E-Instruct")
+
+# Dummy function
+def get_weather(location):
+    return f"the weather in {location} is sunny with low temperatures. \n Enjoy ... "
 
 
-from smolagents import LiteLLMModel
-'''
-model = LiteLLMModel(
-    model_id="meta-llama_-_llama-3.2-1b-instruct",  # Or try other Ollama-supported models
-    api_base="http://127.0.0.1:1234",  # Default Ollama local server
-    #        num_ctx=8192,
-    )
-'''
-#output = model.text_generation("The capital of france is", max_new_tokens=100,)
-client = InferenceClient(provider="hf-inference", model= "meta-llama/Llama-3.3-70B-Instruct",
-                         token=HF_TOKEN)
-output = client.text_generation(
-    "The capital of france is",
-    max_new_tokens=100,
-    )
-print(output)
+local_server_url = "http://localhost:1234"
+
+client = InferenceClient(base_url=local_server_url)
+
+#output = client.chat.completions.create(
+#    messages=[
+#        {"role": "user", "content": "The capital of Germany is -"},
+#    ],
+#    stream=False,
+#    max_tokens=1024,
+#)
+#print(output.choices[0].message.content)
+
+
+SYSTEM_PROMPT = """Answer the following questions as best you can. You have access to the following tools:
+
+get_weather: Get the current weather in a given location
+
+The way you use the tools is by specifying a json blob.
+Specifically, this json should have an `action` key (with the name of the tool to use) and an `action_input` key (with the input to the tool going here).
+
+The only values that should be in the "action" field are:
+get_weather: Get the current weather in a given location, args: {"location": {"type": "string"}}
+example use :
+
+{{
+  "action": "get_weather",
+  "action_input": {"location": "New York"}
+}}
+
+
+ALWAYS use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about one action to take. Only one action at a time in this format:
+Action:
+
+$JSON_BLOB (inside markdown cell)
+
+Observation: the result of the action. This Observation is unique, complete, and the source of truth.
+(this Thought/Action/Observation can repeat N times, you should take several steps when needed. The $JSON_BLOB must be formatted as markdown and only use a SINGLE action at a time.)
+
+You must always end your output with the following format:
+
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Now begin! Reminder to ALWAYS use the exact characters `Final Answer:` when you provide a definitive answer. """
+
+messages = [
+    {"role": "system", "content": SYSTEM_PROMPT},
+    {"role": "user", "content": "What's the weather in London?"},
+    
+]
+
+#print(messages)
+
+output = client.chat.completions.create(
+    messages=messages,
+    stream=False,
+    max_tokens=200,
+)
+
+messages = [
+    {"role": "system", "content": SYSTEM_PROMPT},
+    {"role": "user", "content": "What's the weather in Jaipur?"},
+    {"role": "assistant", "content": output.choices[0].message.content + "Observation:\n" + get_weather('Jaipur')},
+    
+]
+
+output = client.chat.completions.create(
+    messages=messages,
+    stream=False,
+    max_tokens=200,
+)
+
+print(output.choices[0].message.content)
 
 
