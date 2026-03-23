@@ -1,4 +1,10 @@
 genai/
 models/
+pdf/
+LM_Studio_old/
+mcp-server-demo/
+weather/
+.ipynb_checkpoints/
 FG6H0E5819900371.crt
+output.xlsx
 
