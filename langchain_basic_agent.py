@@ -5,6 +5,7 @@ from langchain.chat_models import init_chat_model
 from langchain.tools import tool, ToolRuntime
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain.agents.structured_output import ToolStrategy
+from langsmith.wrappers import wrap_openai  # traces openai calls
 
 
 # Define system prompt
@@ -70,12 +71,12 @@ agent = create_agent(
 
 # Run agent
 # `thread_id` is a unique identifier for a given conversation.
-config = {"configurable": {"thread_id": "1"}}
+config = {"configurable": {"thread_id": "2"}}
 
 response = agent.invoke(
-    {"messages": [{"role": "user", "content": "what is the weather outside?"}]},
+    {"messages": [{"role": "user", "content": "what is the weather in San Francisco?"}]},
     config=config,
-    context=Context(user_id="1")
+    context=Context(user_id="2")
 )
 
 print(response['structured_response'])
@@ -89,7 +90,7 @@ print(response['structured_response'])
 response = agent.invoke(
     {"messages": [{"role": "user", "content": "thank you!"}]},
     config=config,
-    context=Context(user_id="1")
+    context=Context(user_id="2")
 )
 
 print(response['structured_response'])
