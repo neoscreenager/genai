@@ -8,6 +8,7 @@ from langchain.tools import tool, ToolRuntime
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain.agents.structured_output import ToolStrategy
 from langsmith.wrappers import wrap_openai
+from langchain_core.prompts import ChatPromptTemplate
 
 st.title("🦜🔗 Local Bot")
 
@@ -18,8 +19,19 @@ model = init_chat_model(
     model="mistralai/ministral-3-3b",
     model_provider='openai', # because LM Studio mimics OpenAI's API
     base_url='http://127.0.0.1:1234/v1',
-    api_key='not-needed' # LM Studio accepts any string here
+    api_key='not-needed', # LM Studio accepts any string here
+    # system_prompt = "You are a helpful assistant who answers like a pirate."
 )
+
+# create a prompt template for the bot and give it a system prompt
+
+prompt_template = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant who answers like a pirate."),
+    ("user", "{input}")
+])
+
+# Chain the prompt with the model initialized via init_chat_model
+chain = prompt_template | model
 
 # Initialize chat history
 if "history" not in st.session_state:
@@ -33,7 +45,8 @@ for i, message in enumerate(st.session_state.history):
         
 def generate_response(input_text: str) -> str:
     #model = ChatOpenAI(temperature=0.7, api_key=openai_api_key)
-    response = model.invoke(input_text)
+    #response = model.invoke(input_text)
+    response = chain.invoke(input_text)
     return response.content
 
 if prompt := st.chat_input("Say something"):
